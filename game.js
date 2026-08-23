@@ -118,6 +118,96 @@ class Asteroid {
   }
 }
 
+// ── Estrella fugaz ────────────────────────────────────────────────────────────
+const SHOOTING_STAR_SPEED = 300;
+const SHOOTING_STAR_TTL   = 6;
+
+class ShootingStar {
+  constructor() {
+    // Nace en un borde aleatorio, apuntando hacia el interior
+    const side  = randInt(0, 3);
+    const angle = rand(-Math.PI / 5, Math.PI / 5);
+    if (side === 0) {        // arriba
+      this.x = rand(0, W); this.y = 0;
+      this.dir = Math.PI / 2 + angle;
+    } else if (side === 1) { // abajo
+      this.x = rand(0, W); this.y = H;
+      this.dir = -Math.PI / 2 + angle;
+    } else if (side === 2) { // izquierda
+      this.x = 0; this.y = rand(0, H);
+      this.dir = angle;
+    } else {                 // derecha
+      this.x = W; this.y = rand(0, H);
+      this.dir = Math.PI + angle;
+    }
+
+    this.vx = Math.cos(this.dir) * SHOOTING_STAR_SPEED;
+    this.vy = Math.sin(this.dir) * SHOOTING_STAR_SPEED;
+
+    this.radius = RADII[2];
+    this.size   = 2;   // para POINTS en el cálculo de puntaje
+    this.ttl    = SHOOTING_STAR_TTL;
+    this.dead   = false;
+
+    this.rotSpeed = rand(-3, 3);
+    this.rot = rand(0, Math.PI * 2);
+
+    // Polígono irregular
+    const n = randInt(8, 13);
+    this.verts = [];
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      const r = this.radius * rand(0.6, 1.0);
+      this.verts.push([Math.cos(a) * r, Math.sin(a) * r]);
+    }
+  }
+
+  update(dt) {
+    this.x   = wrap(this.x + this.vx * dt, W);
+    this.y   = wrap(this.y + this.vy * dt, H);
+    this.rot += this.rotSpeed * dt;
+    this.ttl -= dt;
+    if (this.ttl <= 0) {
+      this.dead = true;
+      explode(this.x, this.y, 8);
+    }
+  }
+
+  split() { return []; }   // se destruye de un disparo, no se divide
+
+  draw() {
+    // Parpadeo cuando está por desaparecer
+    if (this.ttl < 1.5 && Math.floor(this.ttl * 8) % 2 === 0) return;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // Estela detrás de la dirección de movimiento
+    const len = 40;
+    const dx = -this.vx / SHOOTING_STAR_SPEED * len;
+    const dy = -this.vy / SHOOTING_STAR_SPEED * len;
+    ctx.strokeStyle = 'rgba(255, 210, 74, 0.5)';
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(dx, dy);
+    ctx.stroke();
+
+    // Polígono dorado
+    ctx.rotate(this.rot);
+    ctx.strokeStyle = '#ffd24a';
+    ctx.lineWidth   = 1.5;
+    ctx.lineJoin    = 'round';
+    ctx.beginPath();
+    ctx.moveTo(this.verts[0][0], this.verts[0][1]);
+    for (let i = 1; i < this.verts.length; i++)
+      ctx.lineTo(this.verts[i][0], this.verts[i][1]);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 // ── Ship ──────────────────────────────────────────────────────────────────────
 class Ship {
   constructor() { this.reset(); }
@@ -418,6 +508,10 @@ function update(dt) {
       }
     }
   }
+
+  // Spawn de estrella fugaz (máx. 1 activa)
+  if (!asteroids.some(a => a instanceof ShootingStar) && Math.random() < 0.008)
+    asteroids.push(new ShootingStar());
 
   // Nivel completado
   if (asteroids.length === 0) nextLevel();
