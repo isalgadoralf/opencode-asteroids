@@ -27,4 +27,5 @@ Abre `index.html` directamente en el navegador, o `npx serve .` → `http://loca
 - El nivel avanza solo cuando `asteroids.length === 0`, así que una `ShootingStar` viva bloquea el siguiente nivel hasta que expira.
 - `PowerUp` aparece ~10% al destruir un asteroide, tiene TTL de 8s y otorga `ship.speedTimer = 5` (doble rotación/empuje). Vive en el array separado `powerUps` — no lo mezcles con `asteroids`.
 - `Ship.reset()` otorga 3s de invencibilidad; la colisión con asteroides se ignora mientras `invincible > 0`.
+- Las skins viven en `SKINS` y solo afectan al render: `Ship.draw()` y `drawLifeIcon()` usan `skinIndex`. No cambies `Ship.radius` ni `NOSE` por skin. La selección (`S`) se guarda en `localStorage['asteroids.skin']` y se procesa al inicio de `update()` para que funcione también en `dead`/`gameover`.
 - No hay comandos de lint, typecheck ni tests. Verifica los cambios jugando en el navegador.
