@@ -223,6 +223,7 @@ class Ship {
     this.invincible    = 3;
     this.shootCooldown = 0;
     this.speedTimer    = 0;
+    this.tripleTimer   = 0;
     this.dead          = false;
   }
 
@@ -231,6 +232,7 @@ class Ship {
     if (this.invincible    > 0) this.invincible    -= dt;
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.speedTimer    > 0) this.speedTimer    -= dt;
+    if (this.tripleTimer   > 0) this.tripleTimer   -= dt;
 
     // Doble velocidad y rotación mientras dura el power-up
     const boosted  = this.speedTimer > 0;
@@ -259,6 +261,17 @@ class Ship {
     const NOSE = 21;
     const ox = this.x + Math.cos(this.angle) * NOSE;
     const oy = this.y + Math.sin(this.angle) * NOSE;
+
+    // Triple Shot: abanico de 3 balas (±10°)
+    if (this.tripleTimer > 0) {
+      const SPREAD = Math.PI / 18;
+      return [
+        new Bullet(ox, oy, this.angle - SPREAD),
+        new Bullet(ox, oy, this.angle),
+        new Bullet(ox, oy, this.angle + SPREAD),
+      ];
+    }
+
     return [new Bullet(ox, oy, this.angle)];
   }
 
@@ -330,11 +343,19 @@ class Particle {
   }
 }
 
-// ── Power-up (Velocidad) ──────────────────────────────────────────────────────
+// ── Power-ups ─────────────────────────────────────────────────────────────────
+const POWERUP_TYPES = {
+  speed:  { color: '#0ff', label: 'V' },   // Velocidad: doble rotación/empuje
+  triple: { color: '#0f0', label: '3' },   // Triple Shot: abanico de 3 balas
+};
+
 class PowerUp {
-  constructor(x, y) {
+  constructor(x, y, type = 'speed') {
     this.x      = x;
     this.y      = y;
+    this.type   = POWERUP_TYPES[type] ? type : 'speed';
+    this.color  = POWERUP_TYPES[this.type].color;
+    this.label  = POWERUP_TYPES[this.type].label;
     this.radius = 10;
     this.ttl    = 8;      // segundos antes de desaparecer
     this.dead   = false;
@@ -353,7 +374,7 @@ class PowerUp {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(performance.now() / 600);
-    ctx.strokeStyle = '#0ff';
+    ctx.strokeStyle = this.color;
     ctx.lineWidth   = 1.5;
     ctx.lineJoin    = 'round';
 
@@ -369,13 +390,13 @@ class PowerUp {
     ctx.closePath();
     ctx.stroke();
 
-    // Letra "V"
+    // Letra identificativa del tipo
     ctx.rotate(-performance.now() / 600);
-    ctx.fillStyle = '#0ff';
+    ctx.fillStyle = this.color;
     ctx.font      = 'bold 10px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('V', 0, 0);
+    ctx.fillText(this.label, 0, 0);
     ctx.restore();
   }
 }
@@ -479,8 +500,14 @@ function update(dt) {
         score += POINTS[a.size];
         explode(a.x, a.y, a.size * 5);
         newAsteroids.push(...a.split());
-        // Drop de power-up Velocidad (~10%)
-        if (Math.random() < 0.1) powerUps.push(new PowerUp(a.x, a.y));
+        // Drop de power-ups: 10% independiente por tipo
+        const drops = [];
+        if (Math.random() < 0.1) drops.push('speed');
+        if (Math.random() < 0.1) drops.push('triple');
+        drops.forEach((type, i) => {
+          const ox = i === 0 ? 0 : 14;   // separa los drops si coinciden
+          powerUps.push(new PowerUp(a.x + ox, a.y, type));
+        });
       }
     }
   }
@@ -492,7 +519,8 @@ function update(dt) {
     for (const p of powerUps) {
       if (!p.dead && dist(ship, p) < ship.radius + p.radius) {
         p.dead = true;
-        ship.speedTimer = 5;
+        if (p.type === 'speed') ship.speedTimer = 5;
+        else                    ship.tripleTimer = 5;
         explode(p.x, p.y, 6);
       }
     }
@@ -546,6 +574,14 @@ function drawHUD() {
   if (ship.speedTimer > 0) {
     ctx.fillStyle = '#0ff';
     ctx.fillText(`VELOCIDAD  ${ship.speedTimer.toFixed(1)}s`, 14, 46);
+    ctx.fillStyle = '#fff';
+  }
+
+  // Indicador del power-up Triple Shot (debajo de Velocidad si ambos están activos)
+  if (ship.tripleTimer > 0) {
+    ctx.fillStyle = '#0f0';
+    const y = ship.speedTimer > 0 ? 66 : 46;
+    ctx.fillText(`TRIPLE  ${ship.tripleTimer.toFixed(1)}s`, 14, y);
     ctx.fillStyle = '#fff';
   }
 
