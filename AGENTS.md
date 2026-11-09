@@ -25,6 +25,6 @@ Abre `index.html` directamente en el navegador, o `npx serve .` → `http://loca
 - Puntuación/división basada en tablas: `RADII`/`SPEEDS`/`POINTS` se indexan por `size` del asteroide (1–3); el índice 0 no se usa. Puntos: tamaño 1 = 100, 2 = 50, 3 = 20; `split()` crea dos de `size - 1` y devuelve `[]` en tamaño 1.
 - `ShootingStar` (dorada, TTL 6s, no se divide) comparte el array `asteroids` con `size = 2`, así que `POINTS[a.size]` y `a.split()` deben seguir funcionando para ella. Máximo 1 activa.
 - El nivel avanza solo cuando `asteroids.length === 0`, así que una `ShootingStar` viva bloquea el siguiente nivel hasta que expira.
-- `PowerUp` aparece ~10% al destruir un asteroide, tiene TTL de 8s y otorga `ship.speedTimer = 5` (doble rotación/empuje). Vive en el array separado `powerUps` — no lo mezcles con `asteroids`.
+- `PowerUp` tiene dos tipos (`speed` y `triple`), TTL de 8s y un 10% de drop independiente por tipo al destruir un asteroide. `speed` otorga `ship.speedTimer = 5` (doble rotación/empuje); `triple` otorga `ship.tripleTimer = 5` (abanico de 3 balas a ±10° en `Ship.tryShoot()`). Vive en el array separado `powerUps` — no lo mezcles con `asteroids`.
 - `Ship.reset()` otorga 3s de invencibilidad; la colisión con asteroides se ignora mientras `invincible > 0`.
 - No hay comandos de lint, typecheck ni tests. Verifica los cambios jugando en el navegador.
