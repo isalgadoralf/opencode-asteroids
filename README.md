@@ -29,6 +29,7 @@ Luego visita `http://localhost:3000`.
 | `←` `→`   | Rotar nave |
 | `↑`       | Propulsar  |
 | `Espacio` | Disparar   |
+| `S`       | Cambiar skin de la nave |
 
 ## Puntuación
 
@@ -46,3 +47,5 @@ Luego visita `http://localhost:3000`.
 - Power-ups con 10% de drop por tipo y 5 s de duración:
   - **Velocidad** (V, cian): doble rotación y empuje
   - **Triple Shot** (3, verde): dispara un abanico de 3 balas (±10°)
+- 4 skins de nave (Clásica, Neón, Carmesí y Dorada) con siluetas y colores propios
+- La skin elegida se guarda en `localStorage` y se mantiene al recargar
